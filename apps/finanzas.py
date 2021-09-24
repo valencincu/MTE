@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
@@ -12,49 +12,36 @@ import utils.utils_finanzas as utils_finanzas
 from app import app
 from mte_dataframe import MTEDataFrame
 
-from apps.panel_control import SelectDates, SelectFilterOptions
-
+from elements import CreateButton, SelectDates, SelectFilterOptions, CreateModal
 
 # Carga de DataFrames
 df = MTEDataFrame.get_instance()
 predios, rutas, materiales, cartoneres=MTEDataFrame.create_features()
 
 
-fig = utils_finanzas.grafico_torta(7023, df)
-df_filtrado = df.dropna()[["fecha", "material", "peso"]].head(10)
+fig = utils_finanzas.grafico_torta("NA", df) #Creo una figura vacia rellenar la card que lleva el grafico
 
-# funcion para crear columna de tipo de cartonere
-
-# funcion para calcular pago, dado el dataframe, un legacyId y el dataframe de precios
-
-
-precio_material_dict = {'Mezcla B': [15], 'TELA': [20], 'Vidrio B': [25], 'Chatarra': [10], 'No especificado': [0]}
-precio_material_df = pd.DataFrame.from_dict(precio_material_dict, orient='index')
-df_precio = precio_material_df.reset_index()
-df_precio.rename(columns={"index": "material", 0: "preciocompra"}, inplace=True)
-
-predios_2 = ['CORTEJARENA', 'SAAVEDRA']
-fecha_inicio = pd.to_datetime('3/11/2020', format='%d/%m/%Y')
-fecha_finalizacion = pd.to_datetime('3/8/2021', format='%d/%m/%Y')
-
-df_filtrado_2 = utils_finanzas.crear_df_filtrado(df, predios_2, fecha_inicio, fecha_finalizacion, [], [])
-
-pago = utils_finanzas.calcular_pago(df_filtrado_2, '1967', df_precio)
+#--------------------------------------------------------------------------------------------------------------------------
 
 # Cards
+
+#--------------------------------------------------------------------------------------------------------------------------
+
+#Card con el saldo
 first_card = dbc.Card([
     dbc.CardBody(
         [
-            html.H6("Monto a pagar", id="monto-card-saldo"),
-            html.P(f"$ {round(pago, 2)}", id="label-legajo"),
+            html.H6("Monto a pagar", id="monto-card-saldo",className="card-title"),
+            html.P(f"", id="label-legajo"),
         ]
     )]
 )
 
+#Card con la tabla de ultimos movimientos
 second_card = dbc.Card([
     dbc.CardBody(
         [
-            html.H6("Ultimas cargas"),
+            html.H6("Ultimas cargas",className="card-title"),
             html.Div(children=[
                 DataTable(
                     id="tabla-legajo",
@@ -82,26 +69,34 @@ second_card = dbc.Card([
                             # "format":FormatTemplate.money(2)
                         }
                     ],
-                    data=[df_filtrado.iloc[i].to_dict() for i in range(len(df_filtrado.index))
-                          # {"material": df.material.head(10)
-                          # ,"precioventa": "",
-                          # "preciocompra": ""}
-                          ],
+                    style_cell={
+                            "overflowX":"hidden",
+                            "textOverflow": "ellipsis",
+                            "border": "1px solid black",
+                            "border-left": "2px solid black"
+                        },
+                    style_header={
+                            "backgroundColor": "#4582ec",
+                            "color": "white",
+                            "border": "0px solid #2c559c",
+                        },
                 )
             ])
-        ])],
-    className="card",
+        ],id="tabla-legajo-parent")],
+    className="card last-card",
 )
 
+#Card con el grafico
 third_card = dbc.Card(
     dbc.CardBody(
         [
             html.H5("Material recolectado", className="card-title"),
-            dcc.Graph(id="graph-legajo", figure=fig),
+            dcc.Graph(id="graph-legajo", figure=fig,config= {'displaylogo': False,'displayModeBar': False}),
         ]),
     className="card"
 )
 
+#Estructura que almacena todas las cards
 cards_individual = html.Div(
     [
         dbc.Row(
@@ -112,16 +107,18 @@ cards_individual = html.Div(
                             first_card,
                         ),
                         dbc.Col(
-                            second_card,
+                            third_card,
+                        ),
+                        dbc.Col(
+                            second_card
                         )
                     ],
-                    width=7
+                    width=12
                 ),
-                dbc.Col(third_card, width=5),
             ],
             id="ro1"
         ),
-    ]
+    ],className="container-cards"
 )
 
 # Tooltip de la tabla
@@ -153,73 +150,14 @@ layout = html.Div([
 
     # navbar,
 
-    dbc.Modal(  # Modal sin informacion
-        children=[
-            dbc.ModalHeader(
-                "No se encontró información",
-                style={
-                    "font-size": "30px"
-                }
-            ),
+    CreateModal("sininfo","No se encontró información","Revisá si estan correctamente seleccionados los filtros."),
 
-            dbc.ModalBody(
-                "Revisá si está correctamente seleccionado el rango de fechas y el predio.",
-                style={
-                    "font-size": "20px"
-                }
-            ),
+    CreateModal("errorpago","Faltan precios","Revisá si está completa la tabla de precios."),
 
-            dbc.ModalFooter(
-                dbc.Button(
-                    children=[
-                        html.Img(
-                            src=app.get_asset_url("close.svg"),
-                            className="ico"),
-                        "Cerrar"
-                    ],
-                    id="close-modal-sin-info-button",
-                    className="mr-1 mt-1 btn btn-primary",
-                    n_clicks=0,
-                )
-            ),
-        ],
-        id="sininfo-modal",
-        is_open=False,
-        backdrop="static"  # Modal sin informacion
-    ),
+    CreateModal("legacy_id","No se encontró el número de legajo","Revisá si está correctamente colocado el número de legajo."),
 
-    dbc.Modal(  # Modal error archivo #Modal archivo fallado
-        children=[
-            dbc.ModalHeader(
-                "Problemas con el archivo",
-                style={
-                    "font-size": "30px"}
-            ),
+    CreateModal("archivoerror","Problemas con el archivo","El archivo parece estar dañado, vacio, o con un formato no soportado."),
 
-            dbc.ModalBody(
-                "El archivo parece estar dañado, vacio, o con un formato no soportado. Ingresá los valores a mano.",
-                style={
-                    "font-size": "20px"
-                }
-            ),
-
-            dbc.ModalFooter(
-                dbc.Button(
-                    children=[
-                        html.Img(
-                            src=app.get_asset_url("close.svg"),
-                            className="ico"),
-                        "Cerrar"],
-                    id="close-modal-data-table-button",
-                    className="mr-1 mt-1 btn btn-primary",
-                    n_clicks=0,
-                )
-            ),
-        ],
-        id="tabla-error-modal",
-        is_open=False,
-        backdrop="static"
-    ),
 
     dcc.Download(id="download"),
 
@@ -227,98 +165,23 @@ layout = html.Div([
 
     html.Div(
         id="botonera",
+        className="botonera",
         children=[
 
             html.H6(  # Titulo Botonera
                 "Filtros",
-                id="title-botonera"
-            ),
-
-            html.Label(  # Label fechas
-                "Seleccionar el rango de fechas",
-                id="label-fechas"
+                className="title-botonera"
             ),
 
             html.Div(
                 children=[  # Radiobuttons y picker de fechas
-                    dbc.FormGroup(
-                        children=[
-#                            dbc.RadioItems(
-#                                options=[
-#                                    {'label': 'Última semana', 'value': 'semana'},
-#                                    {'label': 'Último mes', 'value': 'mes'},
-#                                    {'label': 'Último año', 'value': 'año'},
-#                                    {'label': 'Otro', 'value': 'otro'}
-#                                ],
-#                                value='semana',
-#                                className="radio-item",
-#                                style={
-#                                    "fontSize": "18px",
-#                                    "width": "100%",
-#                                },
-#                                id="radio-button-fechas"
-#                            ),
-                            SelectDates(),
-#                            dcc.DatePickerRange(                        
-#                                id="date-range-finanzas",
-#                                display_format="D/M/Y",
-#                                month_format="MM/YY",
-#                                min_date_allowed=date(1995, 8, 5),
-#                                max_date_allowed=date(2021, 12, 31),
-#                                start_date=date(2021, 8, 27),
-#                                end_date=date(2021, 8, 31),
-#                                style={"display": "block", "lang": "es"},
-#                                with_portal=True
-#                            )
-                        ],
-                    ),
-                ],
-                id="date-range-finanzas-div"
-            ),
-
-            html.Label(  # Label de los predios
-                "Seleccionar el predio",
-                id="label-predios"
-            ),
+            SelectDates("date-range-finanzas","radio-button-fechas-finanzas"),
             SelectFilterOptions(predios, "Elegí el predio", "dropdown-predios", "salida-predios", capitalize=True),
-#
-#            html.Div(  # Dropdown de los predios
-#                children=[
-#                    dcc.Dropdown(
-#                        id="dropdown-predios",
-#                        options=[
-#                            {"label": predio.capitalize(), "value": predio} for predio in predios
-#                        ],
-#                        multi=False,
-#                        placeholder="Seleccionar un predio",
-#                        className="dropdowns"
-#                    )],
-#                id="dropdown-predios-div",
-#                className="div-dropdown"
-#
-#            ),
-
-            html.Label(  # Label de lxs cartonerxs
-                "Seleccionar el tipo de cartonerx",
-                id="label-cartonerxs"
+            ]
             ),
-            SelectFilterOptions(cartoneres, "Elegí el tipo de cartonere", "dropdown-cartonere", "salida-cartoneres"),
+            SelectFilterOptions(rutas, "Elegí la ruta", "dropdown-rutas", "salida-rutas",add_all_as_option=True, capitalize=True),
 
-#            html.Div(  # Dropdown de lxs cartonerxs
-#                children=[
-#                    dcc.Dropdown(
-#                        id="dropdown-cartonerx",
-#                        options=[
-#                            {"label": cartoneres, "value": cartoneres} for cartoneres in cartoneres
-#                        ],
-#                        multi=False,
-#                        placeholder="Seleccionar un tipo de cartonerx",
-#                        className="dropdowns"
-#                    )],
-#                id="dropdown-cartonerxs-div",
-#                className="div-dropdown"
-#
-#            ),
+            SelectFilterOptions(cartoneres, "Elegí el tipo de cartonere", "dropdown-cartonerx", "salida-cartoneres"),
 
             html.Label(  # Label de la tabla
                 "Tabla de precios",
@@ -370,8 +233,8 @@ layout = html.Div([
                         ],
                         data=[
                             {"material": ""
-                                , "precioventa": "",
-                             "preciocompra": "",
+                                , "preciora": "",
+                             "preciole": "",
                              "sede": ""}
                         ],
                         editable=True,
@@ -470,9 +333,11 @@ layout = html.Div([
     # Tabs ----------------------------------------------------------------------------------------------------------------------------
 
     html.Div(
+        className="output",
         children=[
             dcc.Tabs(  # Almacena las dos tabs adentro
                 id="tabs-finanzas",
+
                 children=[
                     dcc.Tab(  # Tab Individual
                         children=[
@@ -492,21 +357,7 @@ layout = html.Div([
                                             },
                                             autoComplete="off"
                                         ),
-
-                                        html.Button(
-                                            children=[
-                                                html.Img(
-                                                    src=app.get_asset_url("search.svg")
-                                                ),
-
-                                                html.P(
-                                                    "Buscar"
-                                                )
-                                            ],
-                                            id="search-button",
-                                            n_clicks=0,
-                                            className="mr-1 mt-1 btn btn-primary"
-                                        ),
+                                    CreateButton("search-button","Buscar")
                                     ],
                                         id="search-div",
                                         className=""  # Contenedor de la parte de busqueda
@@ -545,7 +396,7 @@ layout = html.Div([
                             ),
                         ],
                         id="tab1-finanzas",
-                        className="tabs-finanzas tab-finanzas-header",
+                        className="tabs tab-finanzas-header tab",
                         label="Individual",
                         value="individual"
                     ),
@@ -600,7 +451,7 @@ layout = html.Div([
                             ),
                         ],
                         id="tab2-finanzas",
-                        className="tabs-finanzas tab-finanzas-header",
+                        className="tabs tab-finanzas-header tab",
                     ),
                 ],
                 value="individual"
@@ -610,10 +461,12 @@ layout = html.Div([
             "width": "60%",
             "display": "inline-block",
             "float": "right"
-        }
+        },
     ),
+    
 
 ])
+
 
 """
 ----------------------------------------------------------------------------------------------------------------------------------------------
@@ -625,26 +478,67 @@ Callbacks
 """
 
 
+#Funcion que controla los radiobuttons de las fechas y la fecha que aparece en el calendario
+@app.callback(
+    [
+        Output("date-range-finanzas","start_date"),
+        Output("date-range-finanzas","end_date"),
+        Output("radio-button-fechas-finanzas","value")
+    ],
+    [
+        Input("radio-button-fechas-finanzas","value"),
+        Input("date-range-finanzas","start_date"),
+        Input("date-range-finanzas","end_date"),
+    ]
+)
+def cambiarFechaCalendario(periodo,start_date,end_date):
+    trigger = callback_context.triggered[0]
+
+    #Si llamo a la función desde los input de las fechas se tendria que cambiar a otro automaticamente el periodo
+    if trigger["prop_id"] == "date-range-finanzas.start_date" or trigger["prop_id"] == "date-range-finanzas.end_date" :
+        fecha_inicio = start_date
+        fecha_finalizacion = end_date
+        periodo = "otro"
+    
+    #Si no viene de los input, viene de los radiobutton. 
+    #Luego que modifique la fecha de los input con la opcion del radiobutton que llega
+    else:
+        if periodo == 'otro':
+          fecha_inicio = start_date
+          fecha_finalizacion = end_date
+        elif periodo == 'semana':
+          fecha_finalizacion = date.today()
+          otra_fecha = timedelta(6)
+          fecha_inicio = fecha_finalizacion - otra_fecha  
+        elif periodo == 'mes':
+          fecha_finalizacion = date.today()
+          otra_fecha = timedelta(30)
+          fecha_inicio = fecha_finalizacion - otra_fecha
+        else: 
+          fecha_finalizacion = date.today()
+          otra_fecha = timedelta(364)
+          fecha_inicio = fecha_finalizacion - otra_fecha
+
+    return fecha_inicio,fecha_finalizacion,periodo
+
+
+#Funcion que controla todos los botones de la tabla de precios
 @app.callback(
     Output('table-precios', 'data'),
     Output("download", "data"),
-    Output("tabla-error-modal", "is_open"),
+    Output("archivoerror-modal", "is_open"),
     Input('button-save-file', 'n_clicks'),
-    # Input("button-load-file","n_clicks"),
     Input('button-add-row', 'n_clicks'),
     Input('upload-comp', 'contents'),
-    Input("close-modal-data-table-button", "n_clicks"),
+    Input("close-modal-archivoerror-button", "n_clicks"),
     State('table-precios', 'data'),
     State('table-precios', 'columns'),
     State('upload-comp', 'filename'), )
 def add_row(n_clicks_save, n_clicks_add, content, close_n_clicks, rows, columns, filename):
-    """
-    Funcion que controla la carga, descarga e información de la tabla. Llama al trigger para chequear
-    de donde viene el callback y con ese ejecuta la logica correspondiente.
-    """
-
     trigger = callback_context.triggered[0]
 
+    #Si llame a la función del boton de añadir fila toma las filas que ya teniamos, y le agrega una fila nueva.
+    #Si no habia ninguna, crea directamente la primer fila
     if trigger["prop_id"] == "button-add-row.n_clicks":
         if n_clicks_add > 0:
             if rows == None:
@@ -653,36 +547,52 @@ def add_row(n_clicks_save, n_clicks_add, content, close_n_clicks, rows, columns,
                 rows.append(({c['id']: '' for c in columns}))
         return rows, None, False
 
+    #Si llame a la funcion del boton de guardar los archivos, Guarda el archivo como un csv ()
     elif trigger["prop_id"] == "button-save-file.n_clicks":
         df_file = pd.DataFrame(rows).to_csv(index=False)
         return rows, dict(content=df_file, filename="Precios.csv"), False
 
+    #Si llame a la funcion del boton de cargar archivo:
     elif trigger["prop_id"] == "upload-comp.contents":
+        #Si no ancele la carga de archivo (Que dispara el callback igual):
         if content is not None:
+            #Intente parsearlo, y convertirlo a un dataframe, y luego convertirlo en la lista de diccionarios que necesita dash
             try:
                 df = utils_finanzas.parse_contents(content, filename)
-                if not df.empty:
+                if not df.empty: #Si el df que parseamos no esta vacio:
                     df_table = [df.iloc[i].to_dict() for i in range(len(df.index))]
                     return df_table, None, False
-                else:
+                else: #Sino no hace nada, pero activa el modal que te avisa que el archivo esta mal
                     return rows, None, True
+            #Sino, no hace nada, pero activa el modal que te avisa que el archivo esta mal
             except:
                 return rows, None, True
-        else:
+        else: #Si el content esta vacio, te avisa con el modal tambien
             return rows, None, True
-    elif trigger["prop_id"] == "close-modal-data-table-button.n_clicks":
+
+    #Si llame a la función del boton del modal, solo cierra el modal y deja el resto igual
+    elif trigger["prop_id"] == "close-modal-archivoerror-button.n_clicks":
+        return rows, None, False
+    else:
         return rows, None, False
 
-
+#Función que controla todo lo que muestra en la parte de Individual y Todxs
 @app.callback(
     [
         Output("label-total", "children"),
         Output("sininfo-modal", "is_open"),
-        Output("parent-todxs", "children")
+        Output("parent-todxs", "children"),
+        Output("graph-legajo","figure"),
+        Output("label-legajo","children"),
+        Output("legacy_id-modal","is_open"),
+        Output("tabla-legajo","data"),
+        Output("errorpago-modal","is_open"),
     ],
     [
         Input("search-button", "n_clicks"),
-        Input("close-modal-sin-info-button", "n_clicks"),
+        Input("close-modal-sininfo-button", "n_clicks"),
+        Input("close-modal-legacy_id-button", "n_clicks"),
+        Input("close-modal-errorpago-button", "n_clicks"),
         Input("tabs-finanzas", "value"),
         Input("refresh-button", "n_clicks"),
         State("dropdown-predios", "value"),
@@ -691,39 +601,63 @@ def add_row(n_clicks_save, n_clicks_add, content, close_n_clicks, rows, columns,
         State("input-legacyId", "value"),
         State("table-precios", "data"),
         State("sininfo-modal", "is_open"),
-        State("radio-button-fechas", "value")
+        State("graph-legajo","figure"),
+        State("label-legajo","children"),
+        State("legacy_id-modal", "is_open"),
+        State("tabla-legajo","data"),
+        State("errorpago-modal","is_open")
     ]
 )
-def filtrar_rutas(n_clicks, close_n_clicks, tab, refresh_n_clicks, predios, fecha_inicio, fecha_fin, legacy_id, data,
-                  sininfo_is_open, radio_button_val):
-    """
-    Funcion que controla el filtrado de la informacion y devuelve los graficos y metricas correspondientes de la parte de finanzas.
-    Llama al trigger para ver de donde viene la señal y segun eso ejecuta un proceso distinto.
-    """
+def filtrar_rutas(n_clicks, close_n_clicks,close_n_clicks_2,close_n_clicks_3, tab, refresh_n_clicks, predios, fecha_inicio, fecha_fin, legacy_id, data,
+                  sininfo_is_open,figure,pago,legacy_id_no_encontrado_is_open,ultimos_movimientos,errorpago_is_open):
 
     df = MTEDataFrame.get_instance()
     trigger = callback_context.triggered[0]
 
-    if trigger["prop_id"] == "search-button.n_clicks":
-        if n_clicks > 0:
-            df_filtrado = utils_finanzas.crear_df_filtrado(df, [predios], datetime.fromisoformat(fecha_inicio),
-                                                           datetime.fromisoformat(fecha_fin), [], [])
-            if df_filtrado.empty:
-                sininfo_is_open = not sininfo_is_open
+    #Si llame a la funcion apretando el boton de refrescar, buscar, o cambie a la tab de Todxs:
+    if trigger["prop_id"] in ["search-button.n_clicks","refresh-button.n_clicks"] or tab == "todxs":
+        #Solo en este caso va a buscar el df, filtrar, y realizar todos estos procesos que llevan tiempo.
+        df_precios = pd.DataFrame(data)
+        df_filtrado = utils_finanzas.crear_df_filtrado(df, predios, datetime.fromisoformat(fecha_inicio),
+                                            datetime.fromisoformat(fecha_fin), [], [])
+        
+        #Chequea que el df_filtrado no este vacio, y que la persona que buscamos este en el df.
+        cond1 = not df_filtrado.empty
+        cond2 = legacy_id in list(df_filtrado["legacyId"])
 
-    elif tab == "todxs":
-        df_filtrado = utils_finanzas.crear_df_filtrado(df, [predios], datetime.fromisoformat(fecha_inicio),
-                                                       datetime.fromisoformat(fecha_fin), [], [])
-        if df_filtrado.empty:
+        if cond1 and cond2: #Si se cumplen las dos condiciones, muestra todo lo que tiene que mostrar 
+
+            if trigger["prop_id"] == "search-button.n_clicks":
+                figure = utils_finanzas.grafico_torta(legacy_id,df_filtrado)
+                pago,ultimos_movimientos = utils_finanzas.calcular_pago(df_filtrado,legacy_id,df_precios)
+
+                if pago=="Error": #Del hecho de que la tabla de precios esta vacio
+                    errorpago_is_open = not errorpago_is_open
+                else: #Modificamos el formato del pago
+                    pago="$ "+str(pago)
+
+                ultimos_movimientos = ultimos_movimientos.sort_values("fecha",ascending=False)
+
+                if len(ultimos_movimientos.index)>10:
+                    ultimos_movimientos = ultimos_movimientos.head(10)
+                ultimos_movimientos = [ultimos_movimientos.iloc[i].to_dict() for i in range(len(ultimos_movimientos.index))]
+                    
+
+        elif not cond1: #Si el df esta vacio, te avisa con el modal de que esta vacio
             sininfo_is_open = not sininfo_is_open
 
-    elif trigger["prop_id"] == "refresh-button.n_clicks":
-        df_filtrado = utils_finanzas.crear_df_filtrado(df, [predios], datetime.fromisoformat(fecha_inicio),
-                                                       datetime.fromisoformat(fecha_fin), [], [])
-        if df_filtrado.empty:
-            sininfo_is_open = not sininfo_is_open
+        elif not cond2: #Si la persona no esta en el df, te avisa con el modal
+            legacy_id_no_encontrado_is_open = not legacy_id_no_encontrado_is_open
 
-    elif trigger["prop_id"] == "close-modal-sin-info-button.n_clicks":
+    #Los siguientes 3 elif son para cerrar los modals
+    elif trigger["prop_id"] == "close-modal-sininfo-button.n_clicks":
         sininfo_is_open = not sininfo_is_open
 
-    return [n_clicks, sininfo_is_open, n_clicks]
+    elif trigger["prop_id"] == "close-modal-legacy_id-button.n_clicks":
+        legacy_id_no_encontrado_is_open = not legacy_id_no_encontrado_is_open
+
+    elif trigger["prop_id"] == "close-modal-errorpago-button.n_clicks":
+        errorpago_is_open = not errorpago_is_open
+
+
+    return [n_clicks, sininfo_is_open, n_clicks,figure,pago,legacy_id_no_encontrado_is_open,ultimos_movimientos,errorpago_is_open]

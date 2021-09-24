@@ -179,7 +179,7 @@ ul li a img {
   padding-right: 5px;
 }
 
-#logo-mte-finanzas{
+#logo-mte{
   margin-left: 11px;
   margin-top: 0px !important;
   margin-right: 9px;
@@ -189,14 +189,15 @@ ul li a img {
 }
 
 /* 5) Filtros ------------------------------------------------------------------------------------------------------------------------------*/
-#botonera {
+.botonera {
   position: fixed;
   bottom: 0;
-  top: 50px;
+  top: 45px;
   float:left;
   margin:0px;
   padding-top:0px;
   width: 40%;
+  padding-bottom: 20px;
 
   max-height: calc(100%-50px);
   overflow-x: hidden;
@@ -205,45 +206,30 @@ ul li a img {
   background: linear-gradient(0deg, rgba(222,222,222,1) 0%, rgba(247,247,247,1) 51%, rgba(255,255,255,1) 100%);
 }
 
-#title-botonera {
+.title-botonera {
   font-size: 30px;
   padding-left: 10px;
   font-weight: bold;
   color: #376bc4;
+  margin-left: 10px;
 }
     
     /*5.1) Labels */
 
-    #label-predios {
+
+    .labels {
       font-size: 20px;
       font-family: Rubik,monospace;
       margin-top:10px;
-      margin-left: 10px;
-      color:#2c559c;
-    }
-
-    #label-cartonerxs {
-      font-size: 20px;
-      font-family: Rubik,monospace;
-      margin-top:10px;
-      margin-left: 10px;
-      color:#2c559c;
-    }
-
-
-    #label-fechas {
-      font-size: 20px;
-      font-family: Rubik,monospace;
-      margin-top:10px;
-      margin-left: 10px;
-      color:#2c559c;
+      margin-left: 20px !important;
+      color:#2c559c ;
     }
 
     #label-tabla {
       font-size: 20px;
       font-family: Rubik,monospace;
       margin-top:15px;
-      margin-left: 10px;
+      margin-left: 20px !important;
       color:#2c559c;
       display: inline-block;
     }
@@ -297,18 +283,21 @@ ul li a img {
       transition: 0.1s;
     }
 
+    .dates-container {
+      padding: 10px 20px;
+    }
 
-    #date-range-finanzas-div {
+    .date-range {
       width: 100%;
       display:flex;
-      justify-content: right ;
+      justify-content: left ;
       margin:0 auto;
       margin-left: 10px;
       margin-top:10px;
       padding: 0 auto;
     }
 
-    #date-range-finanzas {
+    .date-range {
       width: 100%;
       font-family: Rubik;
       font-size:20px;
@@ -379,6 +368,16 @@ ul li a img {
 
     /*5.3) Dropdown de predios */
 
+    .dropdowns {
+      margin-top: 10px;
+      padding: 0px 20px ;
+    }
+
+    .Select-placeholder{
+      color: grey;
+      vertical-align: text-bottom;
+    }
+
     .div-dropdown {
       width: 100%;
       display:flex;
@@ -387,21 +386,6 @@ ul li a img {
       margin-left:10px;
       margin-top:10px;
       padding: 0 auto;
-    }
-
-    #dropdown-predios {
-      width: 50% !important;
-      font-family: Rubik;
-      font-size:20px;
-      border-radius: 15px;
-    }
-
-
-    #dropdown-cartonerx {
-      width: 50%;
-      font-family: Rubik;
-      font-size:20px;
-      border-radius: 15px;
     }
 
     /*5.4) Tabla de precios */
@@ -445,7 +429,6 @@ ul li a img {
       width: 15rem;
       padding-top: 10px;
       height: 6rem;
-      margin-bottom: 5rem;
       bottom: 20px;
     }
 
@@ -455,7 +438,7 @@ ul li a img {
       white-space: pre-wrap;
       padding-top: 10px;
       height: 6rem;
-      margin-bottom: 5rem;
+
       bottom: 20px;
     }
 
@@ -556,7 +539,7 @@ ul li a img {
 
 /* 6) Modals ------------------------------------------------------------------------------------------------------------------------------*/
 
-#close-modal-sin-info-button {
+.modal-button {
   font-family: Rubik, sans;
   font-size: 15px;
   display:flex !important;
@@ -567,6 +550,10 @@ ul li a img {
   background-color: #4582ec;
 }
 
+.modal-button:hover {
+  background-color: #2c559c;
+}
+
 .ico {
   margin: 0px;
   padding: 0px;
@@ -574,24 +561,6 @@ ul li a img {
   margin-top: -1px;
 }
 
-#close-modal-sin-info-button:hover {
-  background-color: #2c559c;
-}
-
-#close-modal-data-table-button {
-  font-family: Rubik, sans;
-  font-size: 15px;
-  display:flex !important;
-  justify-content: center !important;
-  margin: 0 auto !important;
-  margin-top:0px !important;
-  padding-top: 5px !important;
-  background-color: #4582ec;
-}
-
-#close-modal-data-table-button:hover {
-  background-color: #2c559c;
-}
 
 /* 7) Tabs ------------------------------------------------------------------------------------------------------------------------------*/
 
@@ -623,6 +592,18 @@ ul li a img {
   background: linear-gradient(0deg, rgba(222,222,222,1) 0%, rgba(241,241,241,1) 42%, rgba(255,255,255,1) 100%);
   margin-bottom: 40px;
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+.row {
+  padding: 0px 15px;
+}
+
+.card-title {
+    font-size: 20px;
+    font-family: Rubik,monospace;
+    margin-top:10px;
+    color:#2c559c ;
+
 }
 
 .waves {
@@ -663,21 +644,31 @@ ul li a img {
       padding: 0 auto;
     }
 
-    #search-button {
+    .search-button {
       margin-left: 10px;
-      margin-top: 0px !important;
+      margin-top: 15px !important;
       font-family: Rubik, sans;
       font-size: 20px;
-      padding-top: 2px !important;
+      padding-top: 2px;
       border-radius: 10px !important;
     }
 
-    #search-button:hover {
+    #search-button {
+      margin-top: 0px !important;
+      padding-top: 2px;
+    }
+
+    .button-container {
+      display: flex;
+      justify-content: center;
+    }
+
+    .search-button:hover {
       background-color: #2c559c;
 
     }
 
-    #search-button img {
+    .search-button img {
       margin-top: -2px !important;
     }
 
@@ -787,6 +778,19 @@ ul li a img {
 .expanded-row--empty-cell.dash-delete-header {
   width: 10.45% !important;
 }
+
+#btn-filtro {
+  margin-top: 20px;
+}
+
+.Select-menu-outer {
+  position: relative;
+  margin-top: 10px ;
+  border-radius: 5px ;
+  width: calc(100% - 20px) !important;
+  margin: 10px !important;
+}
+
 
 
 @media (max-width: 995px) {
@@ -952,22 +956,58 @@ ul li a img {
   */
 }
 
+#table-precios-parent {
+      display:block;
+      justify-content: center;
+      margin: 0 auto;
+      margin-top:10px;
+      margin-bottom: 20px;
+      padding: 0px;
+      width: 80%;
+    }
 
+#tabla-legajo {
+      display:block;
+      margin-top:10px;
+      font-size: 20px;
+      padding: 0px;
+      margin-bottom: 0px;
+      padding-bottom: 0px;
+    }
 
+.last-card {
+  margin-bottom: 20px;
+}
 
+.container-cards{
+  padding-bottom: 50px;
+  margin-bottom: 20px;
+}
 
+#div-izquierda-panel{
+  width: 30%;
+}
 
+.output {
+  width: 70%;
+  bottom: 0px;
+  float: right;
+}
 
+.tabs-panel-parent {
+  position: fixed;
+  width: 70%;
+  height: calc(100% - 50px);
+  bottom: 0px;
+}
 
-
-
-
-
-
-
-
-
-
+.graficos-div-parent {
+  margin-top: 20px;
+  overflow-y: scroll;
+  margin-bottom: 20px;
+  height: calc(100vh - 150px);
+  max-height: calc(100vh - 170px);
+}
 
 /* DE ACA PARA ABAJO ES EL CSS DE PLOTLY DASH, SIRVE PARA ALGUNAS COSAS(?) */
 
